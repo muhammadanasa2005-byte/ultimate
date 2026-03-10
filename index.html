@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Image Tools</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;margin:0;padding:0;}
+body{background:#f1f5f9;color:#222;transition:.3s;}
+.dark{background:#0f172a;color:#fff;}
+header{background:linear-gradient(90deg,#2563eb,#1e3a8a);color:white;text-align:center;padding:25px;}
+nav{display:flex;justify-content:center;gap:20px;background:#1e40af;padding:10px;}
+nav a{color:white;text-decoration:none;font-weight:bold;}
+nav a:hover{text-decoration:underline;}
+.container{max-width:1100px;margin:auto;padding:20px;}
+.drop-area{border:2px dashed #3b82f6;padding:50px;border-radius:12px;text-align:center;background:white;transition:.3s;}
+.dark .drop-area{background:#1e293b;}
+.drop-area.dragover{background:#e0edff;}
+.controls{margin-top:20px;background:white;padding:15px;border-radius:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.dark .controls{background:#1e293b;}
+button,select,input{padding:10px;border-radius:6px;border:1px solid #ccc;font-size:14px;}
+button{background:#2563eb;color:white;border:none;cursor:pointer;}
+button:hover{background:#1e40af;}
+.preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px;margin-top:20px;}
+.card{background:white;padding:10px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.1);text-align:center;}
+.dark .card{background:#1e293b;}
+.card img{width:100%;border-radius:6px;}
+.progress{height:6px;background:#ddd;border-radius:6px;margin-top:6px;overflow:hidden;}
+.bar{height:100%;width:0%;background:#2563eb;transition:.5s;}
+.download-all{margin-top:25px;width:100%;font-size:16px;}
+footer{margin-top:40px;background:#111827;color:white;padding:20px;text-align:center;}
+.tools{margin-top:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;}
+.tool{background:white;padding:20px;border-radius:10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.dark .tool{background:#1e293b;}
+.topbar{display:flex;justify-content:flex-end;margin-bottom:10px;}
+.toggle{background:#111827;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<header>
+<h1>Ultimate Image Tools</h1>
+<p>Convert • Compress • Resize Images Online</p>
+</header>
+
+<nav>
+<a href="#converter">Image Converter</a>
+<a href="#compressor">Image Compressor</a>
+<a href="#resizer">Image Resizer</a>
+</nav>
+
+<div class="container">
+
+<div class="topbar">
+<button class="toggle" onclick="toggleDark()">Toggle Dark Mode</button>
+</div>
+
+<!-- IMAGE CONVERTER -->
+<section id="converter">
+<h2>Image Converter</h2>
+<div id="dropArea" class="drop-area">
+<h3>Drag & Drop Images Here</h3>
+<p>or click to select files</p>
+<input type="file" id="fileInput" multiple accept="image/*">
+</div>
+
+<div class="controls">
+<label>Convert To</label>
+<select id="format">
+<option value="image/jpeg">JPG</option>
+<option value="image/png">PNG</option>
+<option value="image/webp">WEBP</option>
+</select>
+
+<label>Width</label>
+<input type="number" id="width" placeholder="auto">
+
+<label>Height</label>
+<input type="number" id="height" placeholder="auto">
+
+<label>Quality</label>
+<input type="range" id="quality" min="0.1" max="1" step="0.1" value="0.9">
+
+<button onclick="clearAll()">Clear</button>
+</div>
+
+<div class="preview" id="preview"></div>
+<button class="download-all" onclick="downloadZip()">Download All</button>
+</section>
+
+<!-- TOOL INFO CARDS -->
+<section class="tools">
+<div class="tool">
+<h3>⚡ Fast</h3>
+<p>Images convert instantly in your browser.</p>
+</div>
+<div class="tool">
+<h3>🔒 Private</h3>
+<p>No uploads. Everything stays on your device.</p>
+</div>
+<div class="tool">
+<h3>📦 Batch</h3>
+<p>Convert multiple images at once.</p>
+</div>
+<div class="tool">
+<h3>📱 Mobile Friendly</h3>
+<p>Works on desktop, tablet, and mobile.</p>
+</div>
+</section>
+
+<!-- ABOUT -->
+<section style="margin-top:40px;background:white;padding:20px;border-radius:10px">
+<h2>About</h2>
+<p>This website allows you to convert, compress, and resize images online easily. All processing is done in your browser.</p>
+</section>
+
+<!-- PRIVACY -->
+<section style="margin-top:20px;background:white;padding:20px;border-radius:10px">
+<h2>Privacy Policy</h2>
+<p>All images remain on your device. We do not upload or store your files.</p>
+</section>
+
+</div>
+
+<footer>
+<p>© 2026 Ultimate Image Tools</p>
+</footer>
+
+<script>
+const dropArea=document.getElementById("dropArea")
+const fileInput=document.getElementById("fileInput")
+const preview=document.getElementById("preview")
+let convertedFiles=[]
+
+fileInput.addEventListener("change",handleFiles)
+dropArea.addEventListener("dragover",e=>{e.preventDefault();dropArea.classList.add("dragover")})
+dropArea.addEventListener("dragleave",()=>{dropArea.classList.remove("dragover")})
+dropArea.addEventListener("drop",e=>{e.preventDefault();dropArea.classList.remove("dragover");handleFiles({target:{files:e.dataTransfer.files}})})
+
+function handleFiles(e){
+const files=e.target.files
+for(let file of files){if(!file.type.startsWith("image/")) continue; processImage(file)}
+}
+
+function processImage(file){
+const reader=new FileReader()
+reader.onload=function(evt){
+const img=new Image()
+img.onload=function(){
+const canvas=document.createElement("canvas")
+const ctx=canvas.getContext("2d")
+const w=document.getElementById("width").value||img.width
+const h=document.getElementById("height").value||img.height
+canvas.width=w
+canvas.height=h
+ctx.drawImage(img,0,0,w,h)
+const format=document.getElementById("format").value
+const quality=document.getElementById("quality").value
+canvas.toBlob(function(blob){
+const url=URL.createObjectURL(blob)
+const card=document.createElement("div")
+card.className="card"
+const image=document.createElement("img")
+image.src=url
+const progress=document.createElement("div")
+progress.className="progress"
+const bar=document.createElement("div")
+bar.className="bar"
+progress.appendChild(bar)
+card.appendChild(image)
+card.appendChild(progress)
+preview.appendChild(card)
+setTimeout(()=>{bar.style.width="100%"},100)
+convertedFiles.push({blob,name:file.name.split(".")[0]})
+},format,quality)
+}
+img.src=evt.target.result
+}
+reader.readAsDataURL(file)
+}
+
+function downloadZip(){
+if(convertedFiles.length===0){alert("No images converted yet");return}
+const zip=new JSZip()
+const format=document.getElementById("format").value.split("/")[1]
+convertedFiles.forEach(file=>{zip.file(file.name+"."+format,file.blob)})
+zip.generateAsync({type:"blob"}).then(content=>{
+const a=document.createElement("a")
+a.href=URL.createObjectURL(content)
+a.download="converted_images.zip"
+a.click()
+})
+}
+
+function clearAll(){preview.innerHTML="";convertedFiles=[]}
+function toggleDark(){document.body.classList.toggle("dark")}
+</script>
+
+</body>
+</html>
